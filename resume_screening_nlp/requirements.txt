@@ -1,0 +1,6 @@
+# Resume Screening NLP — Streamlit deployment
+streamlit>=1.28.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+nltk>=3.8.0
+pypdf>=4.0.0

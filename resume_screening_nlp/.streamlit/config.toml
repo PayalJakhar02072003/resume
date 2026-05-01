@@ -1,0 +1,4 @@
+# Use a free port when another Streamlit app already uses 8501.
+[server]
+port = 8502
+address = "localhost"
