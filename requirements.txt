@@ -1,0 +1,2 @@
+# Streamlit Cloud: when the GitHub repo root is `parik`, this pulls app dependencies.
+-r resume_screening_nlp/requirements.txt

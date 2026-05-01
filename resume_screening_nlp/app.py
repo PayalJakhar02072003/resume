@@ -11,8 +11,16 @@ Deploy on Streamlit Community Cloud: set main file to app.py and Python 3.10+.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
+
+# Help imports when the working directory is not the app folder (some Cloud layouts).
+_APP_DIR = Path(__file__).resolve().parent
+if str(_APP_DIR) not in sys.path:
+    sys.path.insert(0, str(_APP_DIR))
 
 from resume_screening.keywords import highlight_resume_html, matching_keywords
 from resume_screening.pdf_utils import extract_text_from_pdf
@@ -26,12 +34,6 @@ st.set_page_config(
     page_icon="📄",
     layout="wide",
 )
-
-
-@st.cache_resource
-def nltk_bootstrap() -> None:
-    """Warm up NLTK data downloads once per session."""
-    preprocess_text("init stopwords and punkt")
 
 
 def read_uploaded_resume(uploaded_file) -> tuple[str, str]:
@@ -49,8 +51,6 @@ def main() -> None:
         "Upload multiple resumes, paste a **job description**, and get **scores**, "
         "**ranking**, **extracted skills**, and optional **keyword highlights**."
     )
-
-    nltk_bootstrap()
 
     col_left, col_right = st.columns((1, 1))
     with col_left:
@@ -113,7 +113,7 @@ def main() -> None:
 
     st.subheader("Extracted skills (lexicon-based)")
     skill_rows = []
-    for name, raw in zip(names, raw_resumes, strict=True):
+    for name, raw in zip(names, raw_resumes):
         skills = extract_skills(raw)
         skill_rows.append({"filename": name, "skills": ", ".join(skills) if skills else "—"})
     st.dataframe(pd.DataFrame(skill_rows), use_container_width=True, hide_index=True)
@@ -121,7 +121,7 @@ def main() -> None:
     st.subheader("Keyword overlap & highlights")
     st.caption("Terms that appear in both the job description and each resume (after stopword removal).")
 
-    for name, raw in zip(names, raw_resumes, strict=True):
+    for name, raw in zip(names, raw_resumes):
         kws = matching_keywords(job_description, raw)
         with st.expander(f"🔎 {name}", expanded=False):
             st.write("**Matching keywords:**", ", ".join(kws) if kws else "—")
@@ -131,7 +131,7 @@ def main() -> None:
     # Optional: show sklearn cosine matrix snippet for learning (small footnote)
     with st.expander("Technical note (for reports)"):
         st.write(
-            "- **Vectorizer:** TF-IDF with unigrams and bigrams, `sublinear_tf=True`.\n"
+            "- **Vectorizer:** TF-IDF with unigrams and bigrams, `sublinear_tf=True`, `max_df=1.0` (small-batch safe).\n"
             "- **Similarity:** Cosine similarity between the job vector and each resume vector.\n"
             "- **Skills:** Dictionary match (extend list in `resume_screening/skills.py`)."
         )

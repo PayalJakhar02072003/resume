@@ -28,10 +28,12 @@ def compute_tfidf_similarities(
         return np.array([], dtype=float)
 
     corpus = [job_description_processed] + list(resumes_processed)
+    # max_df must stay 1.0 for small batches: with JD + few resumes, shared skills
+    # (python, sql) appear in every doc; max_df=0.95 would drop them and yield 0 similarity.
     vectorizer = TfidfVectorizer(
         ngram_range=(1, 2),
         min_df=1,
-        max_df=0.95,
+        max_df=1.0,
         sublinear_tf=True,
     )
     matrix = vectorizer.fit_transform(corpus)

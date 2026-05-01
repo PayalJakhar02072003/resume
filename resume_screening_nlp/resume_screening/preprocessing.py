@@ -2,6 +2,9 @@
 Text preprocessing for resume / job-description comparison.
 
 Steps: lowercase → remove punctuation → tokenize → remove English stopwords → rejoin.
+
+Uses scikit-learn's built-in English stopword set (no NLTK downloads) so Streamlit Cloud
+deploys stay reliable — NLTK punkt/stopwords downloads often break cold starts on Cloud.
 """
 
 from __future__ import annotations
@@ -9,31 +12,15 @@ from __future__ import annotations
 import re
 import string
 
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
+# sklearn uses a frozenset of lowercase tokens
+_STOP = set(ENGLISH_STOP_WORDS)
 
 
-def _ensure_nltk_stopwords() -> None:
-    """Download NLTK stopwords once (safe to call multiple times)."""
-    import nltk
-
-    try:
-        stopwords.words("english")
-    except LookupError:
-        nltk.download("stopwords", quiet=True)
-
-    # Punkt tokenizer data (name varies slightly across NLTK versions)
-    try:
-        nltk.data.find("tokenizers/punkt")
-    except LookupError:
-        nltk.download("punkt", quiet=True)
-    try:
-        nltk.data.find("tokenizers/punkt_tab")
-    except LookupError:
-        try:
-            nltk.download("punkt_tab", quiet=True)
-        except Exception:
-            pass
+def _tokenize_simple(text: str) -> list[str]:
+    """Alphanumeric tokens (handles resumes without external tokenizer data)."""
+    return re.findall(r"[a-z0-9]+", text.lower())
 
 
 def preprocess_text(text: str) -> str:
@@ -41,23 +28,20 @@ def preprocess_text(text: str) -> str:
     Normalize text for TF-IDF / overlap-based features.
 
     - Lowercase
-    - Remove punctuation (keep intra-word apostrophes stripped with word tokens)
-    - Remove NLTK English stopwords
+    - Remove punctuation
+    - Tokenize (regex)
+    - Remove English stopwords (same family as sklearn's vectorizers)
     - Collapse whitespace
     """
     if not text or not str(text).strip():
         return ""
 
-    _ensure_nltk_stopwords()
     raw = str(text).lower()
-    # Replace punctuation with spaces (keeps word boundaries clear)
     cleaned = raw.translate(str.maketrans(string.punctuation, " " * len(string.punctuation)))
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
-    tokens = word_tokenize(cleaned)
-    stops = set(stopwords.words("english"))
-    # Keep short tokens that are still technical (e.g., "c", "r") — optional filter
-    filtered = [t for t in tokens if t not in stops and len(t) > 1]
+    tokens = _tokenize_simple(cleaned)
+    filtered = [t for t in tokens if t not in _STOP and len(t) > 1]
 
     return " ".join(filtered)
 
