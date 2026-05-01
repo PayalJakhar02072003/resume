@@ -1,10 +1,11 @@
 """
 Resume Screening System — Streamlit entrypoint.
 
-Run from this folder (uses port 8502 via .streamlit/config.toml if 8501 is busy):
+Run from this folder:
     streamlit run app.py
 
-Override once: streamlit run app.py --server.port 8510
+If port 8501 is busy locally:
+    streamlit run app.py --server.port 8502
 
 Deploy on Streamlit Community Cloud: set main file to app.py and Python 3.10+.
 """

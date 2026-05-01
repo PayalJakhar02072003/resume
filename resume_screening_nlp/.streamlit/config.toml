@@ -1,4 +1,6 @@
-# Use a free port when another Streamlit app already uses 8501.
-[server]
-port = 8502
-address = "localhost"
+# Do not set [server] port here.
+# Streamlit Community Cloud always health-checks http://localhost:8501 — a custom
+# port breaks deploy with "connection refused" on /healthz.
+#
+# Local machine: if 8501 is already taken, run:
+#   streamlit run app.py --server.port 8502
